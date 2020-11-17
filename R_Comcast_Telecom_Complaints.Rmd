@@ -1,0 +1,378 @@
+---
+title: "Comcast Telecom Complaints Project"
+author: "Ghadi K"
+date: "11-13-2020"
+output: 
+  html_document:
+    theme: "sandstone"
+    highlight: espresso
+    toc: true
+    toc_depth: 4
+    toc_float:
+      collapsed: true
+ 
+---
+
+```{r setup, include=FALSE , results='hide', warning=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Dataset
+
+In this project, I worked on Comcast Telecom Complaints Dataset where Comcast is a company notorious for terrible customer service and despite repeated promises to improve, they continue to fall short. 
+
+```{r, echo=FALSE , warning=FALSE, message=FALSE,results='hide'}
+library(tidyverse)
+library(DT)
+library(ggplot2)
+library(dplyr)
+library(lubridate) # for time conversion 
+
+telecome <- read.csv("C://Users//ghadi//Documents//DataSet//Comcast_telecom_complaints_data.csv")
+str(telecome)
+```
+
+In the beginning, I start by clean the data and make sure there is to NA values and every column is in the right format for my analysis.
+Also, fix the column name for the Ticket column.
+This how the data look like after :
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE  }
+# Clean data
+telecome <-subset(telecome, select=-c(Date_month_year)) #delete duplicate Date column 
+telecome <- drop_na(telecome) # drop na values
+telecome <- rename(telecome,c("Ticket" = "ï..Ticket.."))#change column name
+telecome$Date <-  as.Date(telecome$Date,format = "%d-%m-%y") # change type to date & correct format
+#telecome$Date <- dmy(telecome$Date) can change format as well
+
+# fix columns types
+telecome$Filing.on.Behalf.of.Someone <- as.factor(telecome$Filing.on.Behalf.of.Someone)
+telecome$Status <- as.factor(telecome$Status)
+telecome$Received.Via <- as.factor(telecome$Received.Via)
+
+# check to see changes 
+#str(telecome)
+datatable(head(telecome)) # to show how dataset look like
+
+```
+
+# Data Visualization
+
+Here I want to provide the trend chart for the number of complaints at monthly and daily granularity levels.
+This can help determine at which day or month the complaints increase so we can investigate further for the reason of that.
+
+## No. of Complaints at Monthly Level
+
+Here we can see that in June the number of complaints increases and June has the highest number of complaints during the entire year.
+And before this increase, there has been increasing in the number of complaints during April and May just before the increase in the number of complaints in June.
+
+So we could say that problems were unsolved fully in April and May and that leads to the huge increase in June.
+
+```{r , echo=FALSE, warning=FALSE}
+ggplot(telecome, aes(format(Date, "%m"))) +
+    geom_bar(stat = "count",fill="steelblue") +
+    theme_minimal()+
+    labs(x = "Month")
+
+```
+
+## No. of Complaints at Daily Level
+
+Here we can see that someday don't have any complaints and other day has a very high number of complaints and later we can use this information to see what was the common problem in day 6 for example.  
+
+```{r , echo=FALSE, warning=FALSE}
+ggplot(telecome, aes(format(Date, "%d"))) +
+    geom_bar(stat = "count",fill="steelblue") +
+    labs(x = "Day")
+```
+
+
+
+# State and No. of Complaints 
+
+I decide to investigate deeper on number of complaints at each State and try to extract some information from the plot. 
+
+
+```{r, echo=FALSE, warning=FALSE}
+ggplot(telecome, aes(State),fill=supp) +
+    geom_bar(stat = "count",fill="steelblue") +
+    coord_flip()+
+    labs(x = "state")
+```
+
+## State with Maximum No.Complaints
+
+Here I represent  each State with it is  number of complaints in table format so it is easier to see the results and extract information.
+
+```{r, echo=FALSE, warning=FALSE,message=FALSE}
+stateTable <- telecome %>% 
+  group_by(State) %>% 
+  summarise(n = length(State))%>%
+  arrange(desc(n))
+datatable(stateTable)
+
+```
+
+For example:
+I find the state with maximum number of complaints Which is Georgia with 288 complaints .
+
+```{r, echo=FALSE, warning=FALSE,message=FALSE}
+stateTable[which.max(stateTable$n),]
+
+```
+
+
+# Complaint Types
+
+Here I divide the complaints to 2 types  based on how it was received . So now we can divide it into 2 types Customer Care Call	or Internet.
+
+```{r , echo=FALSE, warning=FALSE,message=FALSE}
+comTable <- telecome %>% 
+  group_by(Received.Via) %>% 
+  summarise(n = length(Received.Via))
+datatable(comTable)
+
+
+```
+
+## maximum complaint type  
+
+Since that I divide complaint into 2 types I can found the following information There are more complaints  received through Customer Care Call so the company can focus more on improve Customer Care Call Services to help solve more complaints .
+
+
+```{r , echo=FALSE, warning=FALSE,message=FALSE}
+comTable[which.max(comTable$n),]
+
+```
+
+
+
+
+
+
+
+
+
+
+
+#  Complaints Status
+
+I create a new categorical variable with value as Open and Closed. 
+And change values into Open & Pending is to be categorized as Open and Closed & Solved is to be categorized as Closed.So it is easier to see complaints based on there Status.
+
+So now we can see number of complaints for each Status.
+
+```{r, echo=FALSE , warning=FALSE, message=FALSE}
+# state with high pre of unresolved complaints
+
+telecome$Status[which(telecome$Status == "Pending")] = "Open"
+# filter(telecome , Status == "Pending") # just to check if value converted correctly 
+
+telecome$Status[which(telecome$Status == "Solved")] = "Closed"
+# filter(telecome , Status == "Solved") # just to check if value converted correctly 
+
+# see how many complaints open or closed
+ostatusTable <- telecome %>% 
+  group_by(Status) %>% 
+  summarise(n = length(Status))
+datatable(ostatusTable)
+
+```
+
+# Unresolved Complaints
+
+Now I want to know Which state has the highest percentage of unresolved complaints. the answer is Georgia the state with highest percentage of unresolved complaints.
+
+```{r, echo=FALSE , warning=FALSE, message=FALSE,results='hide'}
+telecome %>%
+  filter(telecome$Status == "Open")%>%
+  group_by(State)
+
+highpertab <- telecome %>% 
+  group_by(State) %>% 
+  summarise(n = length(State))%>%
+  arrange(desc(n))
+# ]datatable(highpertab) # show table
+highpertab[which.max(highpertab$n),]
+
+```
+
+
+# Complaints Resolved Till Date
+
+Based on complaints types which were received through the Internet or customer care calls.
+I provide the percentage of complaints resolved till date which is 76.75%	which is good since there are 23.24% of unsolved complaints.
+
+```{r, echo=FALSE, warning=FALSE}
+comcount <-  count(
+telecome %>%
+  filter(Status == "Closed")
+)
+
+perComSol <- (comcount/nrow(telecome))*100
+
+perComSol
+```
+
+
+# Text  Visualization
+
+Here i try to implement Word cloud just like what I did in python to explore the words in complaints and see which words have more frequency in complaints.
+
+```{r, echo=FALSE , warning=FALSE, message=FALSE,results='hide'}
+library("tm")
+library("SnowballC")
+library("wordcloud")
+library("RColorBrewer")
+```
+
+
+```{r, echo=FALSE , warning=FALSE, message=FALSE,results='hide'}
+# Text mining
+
+# Load the data as a corpus
+## create a Corpus object allowing us to call methods on it to perform text cleanning 
+docs <- Corpus(VectorSource(telecome$Customer.Complaint))
+#Inspect the content of the document
+inspect(docs)
+
+# Text transformation
+
+toSpace <- content_transformer(function (x , pattern ) gsub(pattern, " ", x))
+docs <- tm_map(docs, toSpace, "/")
+docs <- tm_map(docs, toSpace, "@")
+docs <- tm_map(docs, toSpace, "\\|")
+
+#Cleaning the text
+
+# Convert the text to lower case
+docs <- tm_map(docs, content_transformer(tolower))
+# Remove numbers
+docs <- tm_map(docs, removeNumbers)
+# Remove english common stopwords
+docs <- tm_map(docs, removeWords, stopwords("english"))
+# Remove your own stop word
+# specify your stopwords as a character vector
+docs <- tm_map(docs, removeWords, c("blabla1", "blabla2")) 
+# Remove punctuations
+docs <- tm_map(docs, removePunctuation)
+# Eliminate extra white spaces
+docs <- tm_map(docs, stripWhitespace)
+# Text stemming
+# docs <- tm_map(docs, stemDocument)
+
+```
+
+```{r, echo=FALSE , warning=FALSE, message=FALSE,results='hide'}
+#Build a term-document matrix
+dtm <- TermDocumentMatrix(docs)
+# Make a one hot encoding matrix
+m <- as.matrix(dtm)
+dim(m)
+```
+
+
+```{r, echo=FALSE , warning=FALSE, message=FALSE,results='hide'}
+# to see how matrix is looking like 
+#m[1:10, 1:10]
+
+```
+
+
+```{r, echo=FALSE , warning=FALSE, message=FALSE,results='hide'}
+#Sort the matrix from most common to least common
+v <- sort(rowSums(m),decreasing=TRUE) # contain each word & its frequency
+```
+
+
+```{r, echo=FALSE , warning=FALSE, message=FALSE,results='hide'}
+# organize 10 most used words in complaints with its number of frequency 
+d <- data.frame(word = names(v),freq=v)
+#head(d, 10) # to see how its looks like
+```
+
+## Word Cloud
+
+This word cloud represent the most used words in customer complaints so have Comcast which is the company name,Services ,Internet,billing and data which probably is concern with the issues of the complaint.
+
+```{r, echo=FALSE, warning=FALSE}
+#Generate the Word cloud visualization
+set.seed(1234)
+wordcloud(words = d$word, freq = d$freq, min.freq = 1,
+          max.words=200, random.order=FALSE, rot.per=0.35, 
+          colors=brewer.pal(8, "Paired"))
+```
+
+## Word Frequencies
+
+This chart show how frequently of the top 10 words  used in the customer complaint.
+
+
+```{r, echo=FALSE, warning=FALSE}
+#Plot word frequencies
+
+barplot(d[1:10,]$freq, las = 2, names.arg = d[1:10,]$word,
+        col ="steelblue", main ="Most frequent words",
+        ylab = "Word frequencies")
+```
+
+
+
+
+
+
+
+
+
+# NLP - Clustering 
+
+The idea is to use clustering is to extract the most used words in complaints and try to have a column containing the types for each complaint for example if a complaint is a slow internet then it will have the complaint type as the internet.
+This can help the Comcast company classify complaints into different types and solve the problems in-depth and not only for this one complaint like if on a certain day all complaints about internet then there may be a problem with the company service.
+
+So the clustering should do:
+In the matrix `m`, which is a one-hot encoded matrix where each column corresponds to an entry of a complaint in the `telecome` data set, find the word that is most common, other than "comcast".
+
+Alternatively, in the matrix `m`, cluster each row, according to their one-hot profile. 
+
+This the first clustering I did it has 10 clusters and removed the word not related to customer complaint like company name , word service and billing.
+
+Note : this can be enhanced in the future.
+
+```{r, echo=FALSE, warning=FALSE}
+m_trans <- t(m)
+
+# Merge bill and billing since they are redundant
+m_trans[,"bill"] <- m_trans[,"bill"] + m_trans[,"billing"]
+
+# remove columns that are uninformative
+remove_index <- which(dimnames(m_trans)[[2]] %in% c("service", "comcast", "billing"))
+
+m_clust <- kmeans(m_trans[,-remove_index], 10)
+
+table(m_clust$cluster)
+```
+This works if we transpose the dats set, so that each row corresponds to a complaint. Add cluster information to the original data
+
+```{r, echo=FALSE , warning=FALSE, message=FALSE,results='hide'}
+telecome$cluster <- m_clust$cluster # Apply cluster to dataset
+```
+
+```{r, echo=FALSE , warning=FALSE, message=FALSE,results='hide'}
+# Visualize the difference in word frequencies
+m_clust
+```
+
+The results here represent the baseline accuracy of the model for each cluster.
+
+```{r, echo=FALSE, warning=FALSE}
+#  baseline accuracy of the model
+prop.table(table(m_clust$cluster))
+
+
+```
+
+Also, can we visualize the relationships in the future to repsent it better.
+
+
+
+
+
