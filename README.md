@@ -6,7 +6,7 @@ I begin working on this project to work on the same dataset using both Python an
 
 This project helps me understand the limitation and advantages of Python,  R  and show me what is better to do in each language.<br />
 
-## Repository content
+## What done in this project?
 
 - EDA<br />
 - Clean dataset.<br />
@@ -27,5 +27,8 @@ But my idea is to use clustering is to extract the most used words in complaints
 This can help the Comcast company classify complaints into different types and solve the problems in-depth and not only for this one complaint like if on a certain day all complaints about intent then there may be a problem with the company service. 
 
 
+## Repository content
 
+* Comcast Telcom Complaints R Markdown.<br />
+* Comcast Telcom Complaints Python.
 
