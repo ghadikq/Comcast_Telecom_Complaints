@@ -28,7 +28,7 @@ library(ggplot2)
 library(dplyr)
 library(lubridate) # for time conversion 
 
-telecome <- read.csv("C://Users//ghadi//Documents//DataSet//Comcast_telecom_complaints_data.csv")
+telecome <- read.csv("data//Comcast_telecom_complaints_data.csv")
 str(telecome)
 ```
 
