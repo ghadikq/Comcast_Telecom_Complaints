@@ -1,6 +1,6 @@
 # Comcast Telecom Complaints
 
-## Stage 2: Developing a research question and analysis
+## Developing a research question and analysis
 
 I begin working on this project to work on the same dataset using both Python and R to have the same analysis and solve the same questions that come to my mind after exploring data I mainly focus on categorical data and try different things on it.<br />
 
